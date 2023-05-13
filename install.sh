@@ -92,6 +92,9 @@ for i in ${tmp_var_lists[*]}; do
     export $i=$tmpdir/$i
 done
 
+# jq
+[[ $(type -P jq) ]] && is_jq=1
+
 # load bash script.
 load() {
     . $is_sh_dir/src/$1
@@ -218,7 +221,7 @@ check_status() {
             is_wget=1
             [[ ! $is_core_file ]] && download core &
             [[ ! $local_install ]] && download sh &
-            [[ ! $(type -P jq) ]] && download jq &
+            [[ ! $is_jq ]] && download jq &
             get_ip
             wait
             check_status
@@ -337,11 +340,14 @@ main() {
     # install dependent pkg
     install_pkg $is_pkg &
 
+    # jq exist
+    [[ $is_jq ]] && >$is_jq_ok
+
     # if wget installed. download core, sh, get ip
     [[ $is_wget ]] && {
         [[ ! $is_core_file ]] && download core &
         [[ ! $local_install ]] && download sh &
-		[[ ! $(type -P jq) ]] && download jq &
+        [[ ! $is_jq ]] && download jq &
         get_ip
     }
 
@@ -398,11 +404,14 @@ main() {
     # core command
     ln -sf $is_sh_dir/$is_core.sh $is_sh_bin
 
-	# jq
-	cp -rf $is_jq_ok /usr/bin/jq
-	
-	# chmod
-    chmod +x $is_sh_bin $is_core_bin /usr/bin/jq
+    # jq
+    [[ ! $is_jq ]] && {
+        cp -rf $is_jq_ok /usr/bin/jq
+        chmod +x /usr/bin/jq
+    }
+
+    # chmod
+    chmod +x $is_sh_bin $is_core_bin
 
     # create log dir
     mkdir -p $is_log_dir
